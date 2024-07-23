@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Empleados</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: linear-gradient(45deg, #f3ec78, #af4261);
+            margin: 0;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 600px;
+        }
+        input[type="text"] {
+            padding: 10px;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            width: 90%;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        button#validar {
+            background: #4CAF50; /* Green */
+            color: white;
+        }
+        button#validar:hover {
+            background: #45a049;
+        }
+        button#registrarLlegada {
+            background: #90EE90; /* Light Green */
+            color: black;
+        }
+        button#registrarLlegada:hover {
+            background: #80E0A2;
+        }
+        button#registrarSalida {
+            background: #FFFFE0; /* Light Yellow */
+            color: black;
+        }
+        button#registrarSalida:hover {
+            background: #F0E6A6;
+        }
+        button#regresar {
+            background: #f44336; /* Red */
+            color: white;
+        }
+        button#regresar:hover {
+            background: #e53935;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        .hidden {
+            display: none;
+        }
+        .loader {
+            width: 100%;
+            height: 20px;
+            background: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+        }
+        .loader::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 0;
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s ease;
+        }
+        .progress {
+            width: 100%;
+            background: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 20px;
+            height: 25px;
+            position: relative;
+        }
+        .progress-bar {
+            height: 100%;
+            width: 0;
+            background: #4CAF50;
+            text-align: center;
+            line-height: 25px;
+            color: white;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+        }
+        .employee-info {
+            text-align: left;
+            margin: 20px 0;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background: #f9f9f9;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0, 0, 0, 0.4);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+        }
+        .modal-content button {
+            margin: 10px;
+        }
+        .modal-content p {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Registro de Empleados</h1>
+        <input type="text" id="cedula" placeholder="Ingrese el número de cédula">
+        <button id="validar">Validar Empleado</button>
+        <div id="registro" class="hidden">
+            <div id="infoEmpleado" class="employee-info"></div>
+            <button id="registrarLlegada">Registrar Llegada</button>
+            <button id="registrarSalida">Registrar Salida</button>
+            <button id="regresar" class="hidden">Regresar</button>
+            <div id="progress" class="hidden">
+                <div id="progress-bar" class="progress-bar">0%</div>
+            </div>
+        </div>
+        <div id="loader" class="loader hidden"></div>
+        <p id="message" class="message"></p>
+    </div>
+
+    <!-- Modal -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <p id="modal-message"></p>
+            <button class="close-btn" id="close-modal">Aceptar</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('validar').addEventListener('click', async () => {
+            const cedula = document.getElementById('cedula').value;
+            if (cedula) {
+                document.getElementById('loader').classList.remove('hidden');
+                const response = await fetch(`/validar/${cedula}`);
+                const data = await response.json();
+                document.getElementById('loader').classList.add('hidden');
+                
+                if (data.success) {
+                    document.getElementById('registro').classList.remove('hidden');
+                    document.getElementById('infoEmpleado').innerHTML = `
+                        <strong>Nombre:</strong> ${data.Nombres}<br>
+                        <strong>Tipo de Documento:</strong> ${data['Tipo documento']}<br>
+                        <strong>No. Documento:</strong> ${data['No. Documento']}<br>
+                        <strong>Rol:</strong> ${data.Rol}
+                    `;
+                    document.getElementById('cedula').disabled = true; // Desactivar campo de entrada
+                    document.getElementById('regresar').classList.remove('hidden'); // Mostrar botón Regresar
+                } else {
+                    showModal('Empleado no encontrado');
+                }
+            } else {
+                showModal('Por favor, ingrese un número de cédula');
+            }
+        });
+
+        document.getElementById('registrarLlegada').addEventListener('click', () => {
+            registrar('LLEGADA');
+        });
+
+        document.getElementById('registrarSalida').addEventListener('click', () => {
+            registrar('SALIDA');
+        });
+
+        document.getElementById('regresar').addEventListener('click', () => {
+            document.getElementById('cedula').disabled = false; // Habilitar campo de entrada
+            document.getElementById('registro').classList.add('hidden');
+            document.getElementById('regresar').classList.add('hidden');
+        });
+
+        async function registrar(tipoRegistro) {
+            const cedula = document.getElementById('cedula').value;
+            if (cedula) {
+                document.getElementById('progress').classList.remove('hidden');
+                const progressBar = document.getElementById('progress-bar');
+                progressBar.style.width = '0%';
+                progressBar.textContent = '0%';
+
+                const response = await fetch('/registrar', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ numeroCedula: cedula, tipoRegistro })
+                });
+
+                const data = await response.json();
+                let progress = 0;
+                const interval = setInterval(() => {
+                    progress += 10;
+                    progressBar.style.width = `${progress}%`;
+                    progressBar.textContent = `${progress}%`;
+                    if (progress >= 100) {
+                        clearInterval(interval);
+                        progressBar.style.width = '100%';
+                        progressBar.textContent = '100%';
+                        showModal(data.message);
+                        setTimeout(() => {
+                            document.getElementById('registro').classList.add('hidden');
+                            document.getElementById('cedula').value = ''; // Limpiar campo de entrada
+                            document.getElementById('cedula').disabled = false; // Habilitar campo de entrada
+                            document.getElementById('progress').classList.add('hidden');
+                        }, 1000); // Esperar 1 segundos antes de redirigir
+                    }
+                }, 300); // Ajustar el intervalo para que sea más suave
+            } else {
+                showModal('Por favor, ingrese un número de cédula');
+            }
+        }
+
+        function showModal(message) {
+            document.getElementById('modal-message').textContent = message;
+            document.getElementById('myModal').style.display = 'flex';
+        }
+
+        document.getElementById('close-modal').addEventListener('click', () => {
+            document.getElementById('myModal').style.display = 'none';
+        });
+    </script>
+</body>
+</html>
